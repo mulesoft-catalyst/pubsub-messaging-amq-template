@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="subscriberRequest" format="json">
+      <types:shape format="weave" example="examples/subscriberRequest.json"><![CDATA[%dw 2.0
+
+type subscriberRequest = {|
+  queueId: String, 
+  exchangeId: String, 
+  clientName: String, 
+  defaultTtl: Number {"typeId": "int"}, 
+  defaultLockTtl: Number {"typeId": "int"}, 
+  "type": String, 
+  encrypted: Boolean, 
+  deadLetterQueueId: String, 
+  maxDeliveries: String, 
+  defaultDeliveryDelay: Number {"typeId": "int"}
+|} {"example": "{\\\"queueId\\\":\\\"consumerQ6\\\",\\\"exchangeId\\\":\\\"resourceExchange\\\",\\\"clientName\\\":\\\"subscriberClient6\\\",\\\"defaultTtl\\\":691200000,\\\"defaultLockTtl\\\":3000,\\\"type\\\":\\\"queue\\\",\\\"encrypted\\\":true,\\\"deadLetterQueueId\\\":\\\"consumerQ1\\\",\\\"maxDeliveries\\\":\\\"5\\\",\\\"defaultDeliveryDelay\\\":2000}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#c7eb4050-ae73-47a7-991c-f0c577f25e69">
+    <types:processor-declaration>
+      <types:input-event>
+        <types:message>
+          <types:payload type="subscriberRequest"/>
+        </types:message>
+      </types:input-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#2e19065d-86af-4dc9-9183-39cd9bfca7a3"/>
+  <types:enrichment select="#62d56434-cbba-4bbc-8822-b9012dcb28ae"/>
+  <types:enrichment select="#28eaba28-3bf6-401c-9555-991c3a8bdd71"/>
+  <types:enrichment select="#d007b2d7-2ba0-41f6-8702-2c1536b0ce63"/>
+</types:mule>

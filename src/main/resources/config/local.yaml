@@ -1,0 +1,37 @@
+http:
+  host: "0.0.0.0"
+  port: "8083"
+  
+https:
+  host: "0.0.0.0"
+  port: "8082"
+  
+amq:
+  endpoint: "https://mq-us-west-2.anypoint.mulesoft.com/api/v1"
+  publishExchange: "resourceExchange"
+  consumerQ1: "consumerQ1"
+  consumerQ2: "consumerQ2"
+  retryQ: "retryQ"
+  errorQ: "errorQ"
+  acktimeoutInSecs : "10"
+
+amqAdmin:
+  orgId: ""
+  envId: ""
+  region: us-west-2
+  
+  
+app:
+  admin:
+    client:
+      id: admin
+        
+consumers:
+  - consumerQ1
+  - consumerQ2
+  
+  
+atCache:
+  ttlInMins : "45"
+  expIntInMins: "5"
+  alias : mqAdminATCache

@@ -1,0 +1,15 @@
+
+
+keystore:
+  keyPassword: ""
+  password: ""
+  alias: ""
+
+
+amq:
+  clientid: ""
+  secret: ""
+
+platformUser: 
+  username: ""
+  password:  ""

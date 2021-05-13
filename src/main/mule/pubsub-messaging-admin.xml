@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<flow name="pubsub-messaging-admin:create-subscription" doc:id="47a192d4-f5a7-4bc1-82da-506643ce63b5" >
+		<flow-ref doc:name="pubsub-messaging-admin:initialise-common-variables-subflow" doc:id="296d2896-1500-47f2-a655-9a09575f875f" name="pubsub-messaging-admin:initialise-common-variables-subflow" />
+		<flow-ref doc:name="pubsub-messaging-util:admin-access-check" doc:id="ac26f852-9128-4fe4-8177-f7338f5365e4" name="pubsub-messaging-util:admin-access-check"/>
+		<choice doc:name="Create DLQ?" doc:id="d32b8074-ff00-425a-8e26-36ec9c65d45b" >
+			<when expression="#[not isEmpty(vars.originalPayload.deadLetterQueueId)]">
+				<flow-ref doc:name="pubsub-messaging-admin:create-dlq" doc:id="81832585-ee5a-4475-ab24-49e7882edd32" name="pubsub-messaging-admin:create-dlq"/>
+			</when>
+			<otherwise >
+				<logger level="INFO" doc:name="No DLQ needed" doc:id="85299882-5549-452f-a51a-e578963f36ba" message="#['No DLQ needed']"/>
+			</otherwise>
+		</choice>
+		<flow-ref doc:name="pubsub-messaging-admin:create-queue" doc:id="0bd224ca-ca5e-43b6-8864-fa9011db1236" name="pubsub-messaging-admin:create-queue"/>
+		<flow-ref doc:name="pubsub-messaging-admin:exchangeBinding" doc:id="2b7c43eb-6ca3-4655-a701-d07f89907ae8" name="pubsub-messaging-admin:exchangeBinding"/>
+		<flow-ref doc:name="pubsub-messaging-admin:create-client-app" doc:id="fa9e8dfd-26f9-44d9-ae92-fe7862d9bbc5" name="pubsub-messaging-admin:create-client-app"/>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:delete-subscription" doc:id="09daef65-842f-4509-ac43-37aaf9401890" >
+		<flow-ref doc:name="pubsub-messaging-admin:initialise-common-variables-subflow" doc:id="3e6fad2d-1ded-4da4-8995-c9d4bd603d9f" name="pubsub-messaging-admin:initialise-common-variables-subflow" />
+		<flow-ref doc:name="pubsub-messaging-util:admin-access-check" doc:id="a3b37d4e-c8af-4a65-abd7-64828895caa6" name="pubsub-messaging-util:admin-access-check"/>
+		<flow-ref doc:name="pubsub-messaging-admin:deleteBinding" doc:id="52fea989-83aa-4c6a-963b-a6394ffa6f33" name="pubsub-messaging-admin:deleteBinding"/>
+		<flow-ref doc:name="pubsub-messaging-admin:deleteQueue" doc:id="03f9c81e-7d69-4ab9-b79f-7e98b02834d5" name="pubsub-messaging-admin:deleteQueue"/>
+		<flow-ref doc:name="pubsub-messaging-admin:delete-client-app" doc:id="3c4a3f8f-2c21-4ca3-8888-13c19fe7f06a" name="pubsub-messaging-admin:delete-client-app"/>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<sub-flow name="pubsub-messaging-admin:initialise-common-variables-subflow" doc:id="a1dc837d-adcc-4da6-90e3-2f8cfa886ebc" >
+		<ee:transform doc:name="initialiseCommonVariables" doc:id="c7eb4050-ae73-47a7-991c-f0c577f25e69">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="queueId"><![CDATA[%dw 2.0
+output application/java
+---
+payload.queueId]]></ee:set-variable>
+				<ee:set-variable variableName="orgId"><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('amqAdmin.orgId')]]></ee:set-variable>
+				<ee:set-variable variableName="envId"><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('amqAdmin.envId')]]></ee:set-variable>
+				<ee:set-variable variableName="region"><![CDATA[%dw 2.0
+output application/java
+---
+Mule::p('amqAdmin.region')]]></ee:set-variable>
+				<ee:set-variable variableName="exchangeId" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.exchangeId]]></ee:set-variable>
+				<ee:set-variable variableName="originalPayload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-variable>
+				<ee:set-variable variableName="clientName" ><![CDATA[%dw 2.0
+output application/java
+---
+payload.clientName]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<flow-ref doc:name="pubsub-messaging-util:get-auth-token" doc:id="fb099291-ca47-44f9-8347-51ab5eba1ddb" name="pubsub-messaging-util:get-auth-token"/>
+	</sub-flow>
+	<flow name="pubsub-messaging-admin:create-queue" doc:id="753b49c2-fc9d-41d6-b38a-d19bfd8336db" >
+		<logger level="INFO" doc:name="CREATE QUEUE" doc:id="ce5ec36f-3d1e-423a-8c2c-369aeaa41509" message="=====CREATE QUEUE====================="/>
+		<ee:transform doc:name="createQueueRequest" doc:id="fc93fda5-ce71-4147-99d0-57f3151353c5">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+fun removePair(e, predicate) =
+  e match {
+    case is Array  -> e map removePair($, predicate)
+    case is Object -> e mapObject (v, k) ->
+                        if (predicate(k))
+                          {}
+                        else
+                          {(k): removePair(v, predicate)}
+    else           -> e
+  }
+
+var keysToRemove = ["queueId" , "exchangeId" , "clientName" ]
+fun removeFields(e) =
+  removePair(
+    e,
+    ((k) -> keysToRemove contains (k as String))
+  )
+     
+---
+(removeFields(vars.originalPayload))]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="PUT" doc:name="PUT:/queues" doc:id="648f0e48-f1c8-455c-bc91-101e6a4011be" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.createQueueEndpoint')]" outputMimeType="application/json">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId,
+	"queueId" : vars.queueId,
+	"region" : vars.region,
+	"envId" : vars.envId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:create-dlq" doc:id="a3e08595-fc7e-4fe8-96cd-0a6367fbe63b" >
+		<logger level="INFO" doc:name="CREATE DLQ" doc:id="fca9eeb2-a19f-4210-ac33-8e5f15c50cb2" message="=====CREATE DLQ====================="/>
+		<http:request method="GET" doc:name="GET:/queues" doc:id="8d80514e-0ad1-4958-9f34-45ec52db6752" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.createQueueEndpoint')]" outputMimeType="application/json">
+			<error-mapping sourceType="HTTP:NOT_FOUND" targetType="DLQ:NOT_EXISTS" />
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId,
+	"queueId" : vars.originalpayload.deadLetterQueueId,
+	"region" : vars.region,
+	"envId" : vars.envId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="985541ec-1ed2-4c5f-a392-2a86be3d8e85" type="DLQ:NOT_EXISTS">
+				<logger level="INFO" doc:name="DLQ Does not Exist. Create." doc:id="6a92c79d-6059-42e6-8c6c-2cefb9aac9c5" message="DLQ Does not Exist. Create." />
+				<ee:transform doc:name="createDLQRequest" doc:id="9640a2a5-a206-427b-8f13-1352a39864b2">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+
+fun removePair(e, predicate) =
+  e match {
+    case is Array  -> e map removePair($, predicate)
+    case is Object -> e mapObject (v, k) ->
+                        if (predicate(k))
+                          {}
+                        else
+                          {(k): removePair(v, predicate)}
+    else           -> e
+  }
+
+var keysToRemove = ["queueId" , "exchangeId" , "clientName", "deadLetterQueueId" , "maxDeliveries", "defaultDeliveryDelay"]
+fun removeFields(e) =
+  removePair(
+    e,
+    ((k) -> keysToRemove contains (k as String))
+  )
+     
+---
+removeFields(vars.originalPayload)]]></ee:set-payload>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="quequeId"><![CDATA[%dw 2.0
+output application/java
+---
+vars.originalPayload.deadLetterQueueId]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<http:request method="PUT" doc:name="PUT:/queues" doc:id="5112b6e1-918f-499e-ac57-1891ffd56705" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.createQueueEndpoint')]" outputMimeType="application/json">
+			<http:headers><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId,
+	"queueId" : vars.originalpayload.deadLetterQueueId,
+	"region" : vars.region,
+	"envId" : vars.envId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+			</on-error-continue>
+		</error-handler>
+		
+	</flow>
+	
+	
+	<flow name="pubsub-messaging-admin:exchangeBinding" doc:id="0a0df09f-2d58-4a31-be17-7813a82d6d1b" >
+		<http:request method="PUT" doc:name="PUT:/bindings/exchanges/{exchangeId}/queues/{queueId}" doc:id="22c753b6-557f-4194-94a7-4dacd49ca061" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.exchangeBindingEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"queueId" : vars.queueId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	
+	<flow name="pubsub-messaging-admin:deleteBinding" doc:id="cc9b2d34-1937-4e78-b13e-61162bc409e9" >
+		<http:request method="DELETE" doc:name="DELETE:/bindings/exchanges/{exchangeId}/queues/{queueId}" doc:id="f002d9f8-2464-4ac4-8460-d5856bb94c4d" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.exchangeBindingEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+	
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"queueId" : vars.queueId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:deleteQueue" doc:id="63f1f06f-6516-4f66-aee3-dd8fd529c542" >
+		<http:request method="DELETE" doc:name="DELETE:/queues/{queueId}" doc:id="43779ef3-3808-4fec-a493-96c0c429309e" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.createQueueEndpoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"queueId" : vars.queueId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:get-client-app-id" doc:id="dae99aeb-5f39-4161-aa0e-676ffa3452e3" >
+		<http:request method="GET" doc:name="GET:/clients" doc:id="bc103516-d8a6-4668-a94a-ae21aa7046ab" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.clientAppEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region
+}]]]></http:uri-params>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="dcf840a0-ad79-4b96-b9be-84fa57a881c5" message="#[payload]"/>
+		<ee:transform doc:name="GetClientId" doc:id="8ab790b2-decc-4418-b430-92ee172512ee" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/java
+var matchElement = payload filter ((item, index) -> item.name == vars.clientName)
+---
+if(sizeOf(matchElement) == 1) (matchElement[0]).clientId 
+else if (sizeOf(matchElement)> 1) "_ERR_TOO_MANY"
+else ""
+]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="0139331e-dc9e-4d08-8f44-bc1d30cf08ee" message="#[payload]"/>
+		<validation:is-false doc:name='(payload as String ) == "_ERR_TOO_MANY"' doc:id="145b3506-f1b3-48cf-bb07-2bbddfefcf5e" expression='#[(payload as String ) == "_ERR_TOO_MANY"]' message="#['Too many Clients Exists']">
+			<error-mapping sourceType="VALIDATION:INVALID_BOOLEAN" targetType="CLIENT_APP:TOO_MANY" />
+		</validation:is-false>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:create-client-app" doc:id="ccde2b79-a70c-4083-b157-5d7b6eead8a8" >
+		<flow-ref doc:name="pubsub-messaging-admin:get-client-app-id" doc:id="32dd9c94-a00c-49a1-a40d-c2da0fe8ba94" name="pubsub-messaging-admin:get-client-app-id" target="clientId"/>
+		<validation:is-blank-string doc:name="Client App Doesnt Exists" doc:id="df635505-93c6-47dd-939f-f3ff9083d467" value="#[vars.clientId]" message="Client App Does not Exists.">
+			<error-mapping sourceType="VALIDATION:NOT_BLANK_STRING" targetType="CLIENT_APP:EXISTS" />
+		</validation:is-blank-string>
+		<logger level="INFO" doc:name="Client App does not exists. Create client App." doc:id="48cd7cb9-ad81-46c6-9b78-0e390d7c6e3e" message="Client App does not exists. Create client App."/>
+		<ee:transform doc:name="createClientAppRequest" doc:id="fdb45930-2d4f-494b-937f-83c064243d19">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"name" : vars.clientName
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="PUT" doc:name="PUT:/clients" doc:id="eca21ee4-7f2c-482c-9676-497e3a836347" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.clientAppEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"queueId" : vars.queueId,
+	"exchangeId" : vars.exchangeId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:reset-client-app" doc:id="104e170e-ddb2-43d2-9376-f0198b930b16" >
+		<flow-ref doc:name="pubsub-messaging-admin:initialise-common-variables-subflow" doc:id="a5d5d9b0-aa02-410e-bd91-81949ee58d3d" name="pubsub-messaging-admin:initialise-common-variables-subflow"/>
+		<flow-ref doc:name="pubsub-messaging-util:admin-access-check" doc:id="10d84231-5d59-4a37-b552-f5053c110111" name="pubsub-messaging-util:admin-access-check"/>
+		<flow-ref doc:name="pubsub-messaging-admin:get-client-app-id" doc:id="b96ca010-b214-483c-82bc-f22a2ca44052" name="pubsub-messaging-admin:get-client-app-id" target="clientId"/>
+		<validation:is-not-blank-string doc:name="Client App Exists" doc:id="6c8064f4-eb39-4d51-867f-66ec305fc77b" value="#[vars.clientId]" message="Client App does not exists"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0dfef6dd-9c76-465c-a34f-30609e9d2e22" message="Client App Exists. Reseting Client Secret."/>
+		<http:request method="POST" doc:name="POST:/clients/{clientId}" doc:id="e228a5b6-4763-4bf5-807f-b8dcb150f50a" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.clientAppByIdEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"clientId" : vars.clientId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+	<flow name="pubsub-messaging-admin:delete-client-app" doc:id="b2422566-a712-452e-a405-ea31c679a62d" >
+		<flow-ref doc:name="pubsub-messaging-admin:get-client-app-id" doc:id="4107b1ea-b2e0-4c76-9cec-8cc12e880783" name="pubsub-messaging-admin:get-client-app-id" target="clientId"/>
+		<validation:is-not-blank-string doc:name="Client App Exists" doc:id="372bd63c-607a-43c3-a24c-d391b37f6342" value="#[vars.clientId]" message="Client App does not exists"/>
+		<logger level="INFO" doc:name="Logger" doc:id="0261b8db-fde6-4c55-af81-1f6c7409b555" message="Client App exists. Deleting Client App"/>
+		<http:request method="DELETE" doc:name="DELETE:/clients/{clientId}" doc:id="e0e4b01f-059c-4975-a72f-cb8954686b5e" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.clientAppByIdEndPoint')]" outputMimeType="application/json">
+			<http:headers ><![CDATA[#[output application/java
+---
+{
+	"Authorization" : "Bearer " ++ (vars.accessToken default "")
+}]]]></http:headers>
+			<http:uri-params ><![CDATA[#[output application/java
+---
+{
+	"orgId" : vars.orgId ,
+	"envId" : vars.envId,
+	"region" : vars.region,
+	"clientId" : vars.clientId
+}]]]></http:uri-params>
+		</http:request>
+		<!-- <error-handler ref="pubsub-messaging-error-handler-create-subscription" /> -->
+	</flow>
+	
+</mule>

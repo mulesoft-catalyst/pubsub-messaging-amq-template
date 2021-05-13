@@ -1,0 +1,13 @@
+{
+   "queueId" : "consumerQ6",
+   "exchangeId" : "resourceExchange",
+   "clientName" : "subscriberClient6" ,
+   "defaultTtl":691200000,
+   "defaultLockTtl":3000,
+   "type":"queue",
+   "encrypted":true,
+   "deadLetterQueueId":"consumerQ1",
+   "maxDeliveries":"5",
+   "defaultDeliveryDelay":2000
+   
+}

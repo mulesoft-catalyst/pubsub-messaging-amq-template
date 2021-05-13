@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:os="http://www.mulesoft.org/schema/mule/os"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/current/mule-os.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+	<ee:object-store-caching-strategy name="Caching_Strategy" doc:name="Caching Strategy" doc:id="ce5b710d-3c30-4cd6-a007-751e9a450bcb" keyGenerationExpression="accessToken">
+		<os:private-object-store alias="${atCache.alias}" entryTtl="${atCache.ttlInMins}" entryTtlUnit="MINUTES" expirationInterval="${atCache.expIntInMins}" config-ref="ObjectStore_Config"/>
+	</ee:object-store-caching-strategy>
+	<os:config name="ObjectStore_Config" doc:name="ObjectStore Config" doc:id="12833553-d59b-4f45-b678-ed66e916f481" />
+	<os:object-store name="platform_cache" doc:name="Object store" doc:id="2dcc8a07-c34e-466d-ad8e-b6cdb946b451" entryTtl="${atCache.ttlInMins}" entryTtlUnit="MINUTES" expirationInterval="${atCache.expIntInMins}" config-ref="ObjectStore_Config"  />
+	
+	<validation:config name="Validation_Config" doc:name="Validation Config" doc:id="cf4f6cfd-2425-4fc6-a346-3e75ac7c6d38" />
+	<flow name="pubsub-messaging-util:get-auth-token" doc:id="2d1ec4ab-393d-4817-b669-57eb2175d8ab" >
+		<os:contains doc:name="amqAT" doc:id="6e2b2a51-6fbf-4196-9d46-84e117e1c1a3" key="#['amqAT']" objectStore="platform_cache" target="atCached"/>
+		<choice doc:name="AMQ Access Token Cached?" doc:id="d435e171-3c0c-48e3-93f8-6419886270c6" >
+			<when expression="#[vars.atCached as Boolean]">
+				<os:retrieve doc:name="accessToken" doc:id="854f0a21-159c-49ab-a208-6d37c527eff8" key="#['amqAT']" objectStore="platform_cache" target="accessToken"/>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="loginPayload" doc:id="5fe6d205-c72b-4101-9abd-f2a5eddd624a">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="loginPayload"><![CDATA[%dw 2.0
+output application/json
+---
+{
+   "username" : p('secure::platformUser.username'),
+   "password" : p('secure::platformUser.password')
+}]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<http:request method="POST" doc:name="loginEndPoint" doc:id="a08fb3b9-f3a3-49be-88f4-440cd513538f" config-ref="AMQAdminRequestor" path="#[p('amqAdmin.loginEndPoint')]" target="loginResponse">
+			<http:body><![CDATA[#[vars.loginPayload]]]></http:body>
+		</http:request>
+		<ee:transform doc:name="Set accessToken" doc:id="532d2b2e-aeed-49b0-ace7-45828413effb">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="accessToken"><![CDATA[%dw 2.0
+output application/java
+---
+vars.loginResponse.access_token as String]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+				<os:store doc:name="accessToken" doc:id="9563be20-1c31-4fed-9c75-a30c35c7aebf" key="#['amqAT']" objectStore="platform_cache">
+					<os:value ><![CDATA[#[vars.accessToken]]]></os:value>
+				</os:store>
+			</otherwise>
+		</choice>
+		<logger level="DEBUG" doc:name="accesstoken" doc:id="0b161654-17d7-44e1-bdf2-60ad27b9b589" message="#[correlationId] | Access Token  : #[vars.accesstoken]" />
+	</flow>
+	
+	
+	<flow name="pubsub-messaging-util:admin-access-check" doc:id="5b775b36-9124-456e-a0d8-5d7aaeab021d" >
+		<ee:transform doc:name="evaluateAdminAccess" doc:id="d007b2d7-2ba0-41f6-8702-2c1536b0ce63" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="isAdminAccess" ><![CDATA[%dw 2.0
+output application/json
+
+import try, fail from dw::Runtime
+import * from dw::core::Binaries
+
+fun getClientId(inAuthString) =
+ splitBy(fromBase64(splitBy(inAuthString, " ")[1]), ":")[0]
+
+var vClientId = try(() -> getClientId(attributes.headers.authorization))
+
+---
+(vClientId.success == true) and
+(vClientId.result == p('app.admin.client.id'))]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<validation:is-true doc:name="Is true" doc:id="28e93c22-8e61-4113-bdc5-2f27a4f50278" config-ref="Validation_Config" expression="#[vars.isAdminAccess as Boolean]" message="Admin Access Required"/>
+	</flow>
+	<sub-flow name="pubsub-messaging-util:get-health-check-response-subflow" doc:id="fb0524b1-4af3-401a-aee6-afde3d0c356b">
+		<ee:transform doc:name="Set varVerboseFlag" doc:id="f86081fa-4f01-4996-947e-3dada337224d" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable resource="transformations/healthcheck-getVerboseFlag.dwl" variableName="varVerboseFlag" />
+			</ee:variables>
+		</ee:transform>
+		<choice doc:name="mode?" doc:id="04771183-d925-4325-b8a6-14742835a6cd" >
+			<when expression="#[vars.varVerboseFlag]">
+				<ee:transform doc:name="Verbose response payload" doc:id="525044a2-d590-4686-b165-2f60b5af1e84" >
+					<ee:message >
+						<ee:set-payload resource="transformations/healthcheck-setVerboseResponse.dwl" />
+					</ee:message>
+				</ee:transform>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Default response payload" doc:id="62d4cffc-b0e2-4c4c-9e9f-101f1abee575">
+			<ee:message>
+						<ee:set-payload resource="transformations/healthcheck-setBasicResponse.dwl" />
+			</ee:message>
+		</ee:transform>
+			</otherwise>
+		</choice>
+	</sub-flow>
+</mule>

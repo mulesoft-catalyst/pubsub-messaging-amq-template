@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:validation="http://www.mulesoft.org/schema/mule/validation"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd">
+
+	<sub-flow name="pubsub-messaging-implementation:post-publish" doc:id="97af57ad-e1b1-4eb0-b973-7d5d7cd57ebe">
+		<logger level="INFO" doc:name="Logger" doc:id="fba9dd6f-15ee-4a86-925b-c5a0081afb09" message="#[payload]"/>
+		<anypoint-mq:publish doc:name="Publish to Exchange" doc:id="1734fabb-a944-4440-bf2c-d62d1820a694" config-ref="Anypoint_MQ_Config" destination="#[vars.exchangeName default p('amq.publishExchange')]" />
+		<ee:transform doc:name="Publish response" doc:id="a6c00a72-f0e7-4c4e-953b-2da9f0692e2c">
+			<ee:message>
+				<ee:set-payload resource="transformations/postEnqueueResponse.dwl" />
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="9cbc886f-4ee4-4f62-8b93-2b6c4daa3256" message="#[&quot;Message successfully published to &quot; ++ p('amq.publishExchange')]" />
+	</sub-flow>
+	
+</mule>

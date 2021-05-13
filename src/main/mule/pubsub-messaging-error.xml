@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd">
+	<error-handler name="pubsub-messaging-error-handler-global"
+		doc:id="b7b9f10d-9a50-47a7-9695-8adb51c61cbd">
+		<on-error-propagate type="APIKIT:BAD_REQUEST">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Bad Request Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/badRequestMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[400
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate type="APIKIT:NOT_FOUND , HTTP:NOT_FOUND">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Not Found Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/notFoundMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[404
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		
+		<on-error-propagate
+			type="APIKIT:METHOD_NOT_ALLOWED">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Method Not Allowed Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/methodNotAllowedMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[405
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Not Acceptable Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/notAcceptableMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[406
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate
+			type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Unsupported Media Type Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/unsupportedMediaTypeMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[415
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+			<ee:transform
+				xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+				xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd"
+				doc:name="Not Implemented Message">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/notImplementedMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[501
+					]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fb7a65d2-7bc6-447b-a6ce-14025f397e82" type="CLIENT_APP:TOO_MANY">
+			<ee:transform doc:name="Transform Message" doc:id="afbb1518-989d-400a-ad54-2300cbcf62ad">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "success": false,
+    "apiName": Mule::p("api.name"),
+    "version": Mule::p("api.name"),
+    "correlationId": correlationId,
+    "timestamp": now(),
+    "errorDetails": [
+        {
+            "code": "ERROR_CLIENT_APP",
+            "message": "Too many client apps",
+            "additionalInfo": (error.description default "")
+        }
+    ]
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+409]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="d60746b2-74a5-4155-939a-99b57cb684f2" type="CLIENT_APP:EXISTS">
+			<logger level="INFO" doc:name="Logger" doc:id="a9284356-4847-4373-8c28-7dbb4be94659" message="Client App already exists. Skip Creation."/>
+			<ee:transform doc:name="Transform Message" doc:id="0397eecf-7a8d-487e-bf6d-7e5623b1a8a4" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status" : "success",
+  "clientId" : vars.clientId,
+  "clientSecret" : "--Already Provided--"
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-continue>
+				<on-error-propagate enableNotifications="true"
+			logException="true" doc:name="On Error Propagate"
+			doc:id="7d4a335e-872d-4266-9c15-11eb7e80d914" type="ANY">
+			<ee:transform doc:name="Generic Error Message"
+				doc:id="5fd402a9-20c3-47e5-9a82-a0745afe5950">
+				<ee:message>
+					<ee:set-payload
+						resource="transformations/error/genericMessage.dwl" />
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[500]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+	
+	
+		<error-handler name="pubsub-messaging-error-handler-message-consumption"
+		doc:id="6deb954e-6106-4ab1-963b-16651028cc06">
+					<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="5aa660fa-b4b5-4cc2-80b9-6538b309cf28" type="HTTP:CONNECTIVITY">
+				<logger level="INFO" doc:name="HTTP Connectivity Error" doc:id="6160d950-2bca-483e-b350-2a39c85068dc" message="Connectivity/Retriable Error. The message will be retried automatically."/>
+			</on-error-propagate>
+			 <on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="17c6b2c0-4a26-475a-ab69-81b942fdce23" type="ANYPOINT-MQ:RETRY_EXHAUSTED">
+			 				<logger level="INFO" doc:name="Logger" doc:id="d93496c1-af99-4212-ad09-459fb8a059ce" message="Max retries exhauseted, the message will be pushed to ${amq.retryQ}" />
+				<ee:transform doc:name="Transform Message" doc:id="581f824a-6bb3-443a-8a63-d594a1866c9e">
+					<ee:message>
+					<ee:set-payload resource="transformations/reset-payload.dwl" />
+					</ee:message>
+				</ee:transform>
+				<anypoint-mq:publish doc:name="Push message to RetryQ" doc:id="77acd8dd-e87c-42e3-a1d0-97cf018b89fa" config-ref="Anypoint_MQ_Config" destination="${amq.retryQ}"/>
+			<anypoint-mq:ack doc:name="Ack" doc:id="49435550-033e-44e0-bad5-d223e8855708" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken default attributes.ackToken]"/>		 
+			</on-error-continue>
+						<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="9f53d793-58cd-4ae3-9627-31402aa05d0b" type="ANY">
+				<logger level="INFO" doc:name="Logger" doc:id="67d6123f-30ef-48f6-860a-a6f4b0cccf54" message="Business or data error. The message will be pushed to ${amq.errorQ}"/>
+				<ee:transform doc:name="Transform Message" doc:id="a4176fa3-b1d2-4161-b1ea-cb9815963a01" >
+					<ee:message >
+					<ee:set-payload resource="transformations/reset-payload.dwl" />
+					</ee:message>
+				</ee:transform>
+				<anypoint-mq:publish doc:name="Push message to ErrorQ" doc:id="5784c6b0-41f3-4e71-bce5-cad6017c96ea" config-ref="Anypoint_MQ_Config" destination="${amq.errorQ}">
+				<anypoint-mq:properties ><![CDATA[#[output application/java
+---
+{
+	"errorDescription" : error.description default 'Unknown Error',
+	"errorType" : error.errorType.namespace,
+	"errorIdentifier" : error.errorType.identifier,
+	"originalProcessQueue" : vars.processQ default ""
+	
+}]]]></anypoint-mq:properties>
+			</anypoint-mq:publish>
+			<anypoint-mq:ack doc:name="Ack" doc:id="f4fc1c5f-3814-4a30-9de1-90a98103c41d" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken default attributes.ackToken]"/>
+			</on-error-continue>
+	</error-handler>
+	<error-handler name="pubsub-messaging-error-handler-create-subscription" doc:id="7205d253-43c7-47ae-a7ba-61cfd2d96ff0" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="c90e24cd-6c46-462a-804c-e63e05cf6ead" type="CLIENT_APP:TOO_MANY">
+			<ee:transform doc:name="Transform Message" doc:id="1af72c12-2644-4f98-a99c-69bd79d6f32b">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "success": false,
+    "apiName": Mule::p("api.name"),
+    "version": Mule::p("api.name"),
+    "correlationId": correlationId,
+    "timestamp": now(),
+    "errorDetails": [
+        {
+            "code": "ERROR_CLIENT_APP",
+            "message": "Too many client apps",
+            "additionalInfo": (error.description default "")
+        }
+    ]
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.statusCode default 560]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+		<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="e92791e2-693b-471a-9566-0b4c11bbaa9f" type="CLIENT_APP:EXISTS">
+			<logger level="INFO" doc:name="Logger" doc:id="59ff90e5-4cbc-4d70-82cf-0134a7c99ce5" message="Client App already exists. Skip Creation. #[vars.clientId]"/>
+			<ee:transform doc:name="Transform Message" doc:id="ce7eb9ac-a412-4c4c-a43f-2dc345978192" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+  "status" : "success",
+  "clientId" : vars.clientId,
+  "clientSecret" : "--Already Provided--"
+}]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+		</on-error-continue>
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d2bfe03c-16af-4599-8e9a-15c51b9c7c18" type="ANY">
+			<ee:transform doc:name="Transform Message" doc:id="997efe59-1e45-43e2-904b-0fe81f8ff002">
+				<ee:message>
+					<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+    "success": false,
+    "apiName": Mule::p("api.name"),
+    "version": Mule::p("api.name"),
+    "correlationId": correlationId,
+    "timestamp": now(),
+    "errorDetails": [
+        {
+            "code": "ERROR_SUBSCRIBER",
+            "message": "Error Occured while creating a subscriber",
+            "additionalInfo": (error.description default "")
+        }
+    ]
+}]]></ee:set-payload>
+				</ee:message>
+				<ee:variables>
+					<ee:set-variable variableName="httpStatus"><![CDATA[%dw 2.0
+output application/java
+---
+attributes.statusCode default 560]]></ee:set-variable>
+				</ee:variables>
+			</ee:transform>
+		</on-error-propagate>
+	</error-handler>
+</mule>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+	<flow name="pubsub-messaging-subscriber:consumer1-flow" doc:id="9ab9bf51-6e63-458a-9dee-5b112f8a8101" >
+		<anypoint-mq:subscriber doc:name="Subscriber - Consumer 1" doc:id="e5c24b41-2a4c-4228-9feb-2eae2c4117d3" config-ref="Anypoint_MQ_Config" destination="${amq.consumerQ1}" acknowledgementMode="MANUAL" acknowledgementTimeout="${amq.acktimeoutInSecs}" acknowledgementTimeoutUnit="SECONDS"/>
+		<ee:transform doc:name="Set processQ" doc:id="2e19065d-86af-4dc9-9183-39cd9bfca7a3" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="processQ" ><![CDATA[%dw 2.0
+output application/java
+---
+p("amq.consumerQ1")]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[attributes.ackToken]" doc:name="Set ackToken" doc:id="e263dd70-e1a0-4d2d-bc05-b15ed82214cb" variableName="ackToken" />
+		<logger level="INFO" doc:name="Logger" doc:id="dfc65ae5-ded7-4c15-a127-ac56c827bfce" message="Message Received at Consumer 1 : #[payload]"/>
+		<anypoint-mq:ack doc:name="Ack" doc:id="f21f7213-545f-4165-83f0-94e499a13417" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken]"/>
+		<error-handler ref="pubsub-messaging-error-handler-message-consumption" />
+	</flow>
+	<flow name="pubsub-messaging-subscriber:consumer2-flow" doc:id="22f236a1-557d-4506-a882-26b275243767" >
+		<anypoint-mq:subscriber doc:name="Subscriber - Consumer 2" doc:id="cd21c404-e6e4-4d20-815f-56626c9e5401" config-ref="Anypoint_MQ_Config" destination="${amq.consumerQ2}" acknowledgementMode="MANUAL" acknowledgementTimeout="${amq.acktimeoutInSecs}" acknowledgementTimeoutUnit="SECONDS"/>
+		<ee:transform doc:name="Set processQ" doc:id="7526bebf-ffed-4dec-b34d-5ee6a537afbd" >
+			<ee:message >
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="processQ" ><![CDATA[%dw 2.0
+output application/java
+---
+p("amq.consumerQ2")]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<set-variable value="#[attributes.ackToken]" doc:name="Set ackToken" doc:id="0f62090a-ee08-4348-8a7d-1d324763b875" variableName="ackToken" />
+		
+		<logger level="INFO" doc:name="Logger" doc:id="583585bd-eb09-4a6f-9513-3d9c517a4c97" message="Message Received at Consumer 2 : #[payload]"/>
+		<anypoint-mq:ack doc:name="Ack" doc:id="5254eed5-7ee2-48e1-8998-d262c3bd6dd0" config-ref="Anypoint_MQ_Config" ackToken="#[vars.ackToken]"/>
+		<error-handler ref="pubsub-messaging-error-handler-message-consumption" />
+	</flow>
+</mule>

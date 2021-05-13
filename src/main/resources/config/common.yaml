@@ -1,0 +1,17 @@
+api:
+  name: "pubsub-messaging"
+  version: "1.0.0"
+  
+template:
+ logger:
+  package: "org.mulesoft.templates"
+  
+amqAdmin:
+  host: anypoint.mulesoft.com
+  port: "443"
+  createQueueEndpoint: /mq/admin/api/v1/organizations/{orgId}/environments/{envId}/regions/{region}/destinations/queues/{queueId} 
+  exchangeBindingEndPoint: /mq/admin/api/v1/organizations/{orgId}/environments/{envId}/regions/{region}/bindings/exchanges/{exchangeId}/queues/{queueId}
+  clientAppEndPoint: /mq/admin/api/v1/organizations/{orgId}/environments/{envId}/clients
+  clientAppByIdEndPoint: /mq/admin/api/v1/organizations/{orgId}/environments/{envId}/clients/{clientId}
+  loginEndPoint : /accounts/login
+  loginByOAuthEndPoint : /accounts/oauth2/token

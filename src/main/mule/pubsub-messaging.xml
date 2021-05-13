@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd  http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <apikit:config name="pubsub-messaging-config" api="pubsub-messaging.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="pubsub-messaging-main">
+        <http:listener config-ref="pubsub-messaging-httpsListenerConfig" path="/api/*" outputMimeType="application/json">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="pubsub-messaging-config" />
+        <error-handler ref="pubsub-messaging-error-handler-global" />
+    </flow>
+    <flow name="pubsub-messaging-console">
+        <http:listener config-ref="pubsub-messaging-httpsListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="pubsub-messaging-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xsi:schemaLocation=" http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\healthcheck:pubsub-messaging-config">
+        <logger level="INFO" message="get:\healthcheck:pubsub-messaging-config" />
+        <flow-ref doc:name="pubsub-messaging-util:get-health-check-response-subflow" doc:id="73f8aa9a-adc2-4bbd-9034-c1b879d0fe57" name="pubsub-messaging-util:get-health-check-response-subflow" />
+    </flow>
+    <flow name="put:\admin\subscriber\credentials\reset:application\json:pubsub-messaging-config">
+        <logger level="INFO" doc:name="put:\admin\subscriber\credentials\reset" doc:id="6d380d4b-bb06-470f-9a25-f0d33b7c91ea" message="put:\admin\subscriber\credentials\reset" />
+        <flow-ref doc:name="pubsub-messaging-admin:reset-client-app" doc:id="ec123d81-0231-4848-8daa-c3e4da8b4f36" name="pubsub-messaging-admin:reset-client-app" />
+    </flow>
+    <flow name="delete:\admin\subscriber\unsuscribe:application\json:pubsub-messaging-config">
+        <logger level="INFO" doc:name="delete:\admin\subscriber\unsuscribe" doc:id="da424c05-489c-4804-9ce5-f8c90de7f6d3" message="delete:\admin\subscriber\unsuscribe" />
+        <flow-ref doc:name="pubsub-messaging-admin:delete-subscription" doc:id="f4266d19-4a48-4ae2-811f-967f2a417854" name="pubsub-messaging-admin:delete-subscription" />
+    </flow>
+    <flow name="post:\admin\subscriber:application\json:pubsub-messaging-config">
+        <logger level="INFO" doc:name="post:\admin\subscriber" doc:id="68511652-64aa-4e40-9e7f-1b61ee82d396" message="post:\admin\subscriber" />
+        <flow-ref doc:name="pubsub-messaging-admin:create-subscription" doc:id="1ee23817-0aac-4168-99b5-f430fbd1052a" name="pubsub-messaging-admin:create-subscription" />
+    </flow>
+    <flow name="post:\publish:application\json:pubsub-messaging-config">
+        <logger level="INFO" message="post:\publish:application\json:pubsub-messaging-config" doc:name="post:\publish:application\json:pubsub-messaging-config" />
+        <flow-ref doc:name="pubsub-messaging-implementation:post-publish" doc:id="b4e75cb0-584b-42a1-8f62-f3211bbf5527" name="pubsub-messaging-implementation:post-publish" />
+    </flow>
+    <flow name="post:\publish\exchange\(exchangeName):application\json:pubsub-messaging-config">
+        <logger level="INFO" message="post:\publish\exchange\(exchangeName):application\json:pubsub-messaging-config" doc:name="post:\publish\exchange\(exchangeName):application\json:pubsub-messaging-config" />
+        <ee:transform doc:name="exchangeName">
+            <ee:variables>
+                <ee:set-variable variableName="exchangeName">attributes.uriParams.'exchangeName'</ee:set-variable>
+            </ee:variables>
+        </ee:transform>
+        <flow-ref doc:name="pubsub-messaging-implementation:post-publish" doc:id="6651bc02-2930-4136-a692-f08913f7ebfe" name="pubsub-messaging-implementation:post-publish" />
+    </flow>
+</mule>

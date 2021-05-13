@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties"
+	xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:anypoint-mq="http://www.mulesoft.org/schema/mule/anypoint-mq" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd 
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd
+http://www.mulesoft.org/schema/mule/anypoint-mq http://www.mulesoft.org/schema/mule/anypoint-mq/current/mule-anypoint-mq.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+
+	<http:listener-config
+		name="pubsub-messaging-httpListenerConfig">
+		<http:listener-connection host="${http.host}"
+			port="${http.port}" />
+	</http:listener-config>
+	<anypoint-mq:config name="Anypoint_MQ_Config" doc:name="Anypoint MQ Config" doc:id="c04666db-5794-4813-9949-b28e47bb4e13" >
+		<anypoint-mq:connection url="${amq.endpoint}" clientId="${secure::amq.clientid}" clientSecret="${secure::amq.secret}" />
+	</anypoint-mq:config>
+	
+	
+	<global-property doc:name="Global Property Mule Env"
+		doc:id="1dfbc43e-5ef6-48f2-a450-9f455563bbbb" name="mule.env"
+		value="local" />
+	<global-property doc:name="Global Property Mule Key"
+		doc:id="9aa0ef78-86fd-45e4-b489-15b7cb20c23f" name="mule.key"
+		value="1111222233334444" />
+	<configuration-properties
+		doc:name="Configuration properties env file"
+		doc:id="acc9c61c-70c3-4176-ac95-693fa31f62ca"
+		file="config/${mule.env}.yaml" />
+	<secure-properties:config
+		name="Secure_Properties_Config" doc:name="Secure Properties Config"
+		doc:id="f860b79d-3951-409e-a886-e45c325f07e8"
+		file="config/secured/${mule.env}.yaml" key="${mule.key}">
+	</secure-properties:config>
+	<configuration doc:name="message-acquisition-exception-handler"
+		doc:id="845f6c7b-2457-44b3-9d87-98ec883ae445"
+		defaultErrorHandler-ref="pubsub-messaging-error-handler-global" />
+	<configuration-properties
+		doc:name="Configuration properties"
+		doc:id="9f03c519-48f2-46d3-9a2a-ad179f6aabbe"
+		file="config/common.yaml" />
+	<http:listener-config
+		name="pubsub-messaging-httpsListenerConfig"
+		doc:name="HTTP Listener config"
+		doc:id="51be6c50-05e5-411e-8e5f-338ffa6347ba">
+		<http:listener-connection protocol="HTTPS"
+			host="${https.host}" port="${https.port}">
+			<tls:context>
+				<tls:key-store type="jks"
+					path="certificates/${mule.env}-sender.jks"
+					alias="${secure::keystore.alias}"
+					keyPassword="${secure::keystore.keyPassword}"
+					password="${secure::keystore.password}" />
+			</tls:context>
+		</http:listener-connection>
+	</http:listener-config>
+	
+	<http:request-config name="AMQAdminRequestor" doc:name="HTTP Request configuration" doc:id="ef6e96c6-b131-4b05-bec8-86d2f8c2f95c" >
+		<http:request-connection protocol="HTTPS" host="#[p('amqAdmin.host')]" port="#[p('amqAdmin.port')]" />
+	</http:request-config>
+	
+</mule>
