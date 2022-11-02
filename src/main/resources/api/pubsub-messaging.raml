@@ -1,0 +1,280 @@
+#%RAML 1.0
+title: PubSub Messaging API
+description: PubSub Messaging API
+
+types:
+  subscription:
+    type: object
+    properties:
+      queueId:
+        description : Queue Identifier
+      exchangeId:
+        description : Exchange Identifier
+      clientName:
+        description : Name of the client application
+      defaultTtl? : 
+        description : Default TTL
+        type: number
+        default : 604800000
+      defaultLockTtl?:
+        description : Default Lock TTL
+        type: number
+        default: 120000
+      type?:
+        default: queue
+      encrypted?:
+        description : Encryption - true or false
+        type: boolean
+        default: false
+      deadLetterQueueId?:
+        description : DLQ Identifier
+      maxDeliveries?:
+        default : "5"
+      defaultDeliveryDelay?:
+        type: number
+        default: 2000
+      
+  subscriptionResponse:
+    type: object
+    properties:
+      status: 
+        default: success
+      clientId:
+      clientSecret:
+   
+  unsubscribeRequest:
+    type: object
+    properties:
+      queueId:
+      exchangeId:
+      clientName:
+  
+  credentialResetRequest:
+    type: object
+    properties:
+      clientName:
+  
+  errorResponse:
+    type: object
+    properties:
+      success: boolean
+      apiName:
+      version:
+      timestamp: datetime
+      errorDetails: 
+        type: array
+        items: errorDt
+  
+  errorDt:
+    type: object
+    properties:
+      code: integer
+      message:
+      additionalInfo:
+       
+  
+  healthCheckResponse:
+    type: object
+    displayName: healthCheckResponse
+    properties: 
+      timestamp:
+        type: string
+        required: true
+        example: "2020-07-23T20:12:20.158-04:00"
+      status:
+        type: string
+        required: false
+        enum: ["Running", "Down", "Partial"]
+        example: "Running"
+      details:
+        type: object
+        required: false      
+
+
+#Security Schema Definitions
+securitySchemes:
+  basic-authentication-required: 
+    type: Basic Authentication
+    describedBy:
+      headers:
+        Authorization:
+          description: |
+            Basic Authentication - Used to send the Base64 encoded the client "id:secret" credentials
+          type: string
+
+/publish:
+  description: API Endpoint to publish to default exchange configured in the properties file ${amq.publishExchange}
+  post:
+    body:
+      application/json:
+        type: any
+    responses:
+      202:
+        body:
+          application/json:
+  /exchange:
+    /{exchangeName}:
+     description: API Endpoint to publish to an exchange of choice {exchangeName}
+     post:
+      body:
+        application/json:
+          type: any
+      responses:
+        202:
+          body:
+            application/json:
+
+/admin:
+  /subscriber:
+    securedBy:
+    - basic-authentication-required
+    post:
+      description: API Endpoint to create a subscriber (queue , corresponding DLQ and client) for an exchange 
+      body:
+         application/json:
+           type: subscription
+           example: 
+             {
+              "queueId" : "consumerQ6",
+              "exchangeId" : "resourceExchange",
+              "clientName" : "subscriberClient6" ,
+              "defaultTtl":691200000,
+              "defaultLockTtl":3000,
+              "type":"queue",
+              "encrypted":true,
+              "deadLetterQueueId":"consumerQ1",
+              "maxDeliveries":"5",
+              "defaultDeliveryDelay":2000   
+            }
+      responses:
+        201:
+          body:
+            application/json:
+              type: subscriptionResponse
+              example:
+                {
+                  "status" : "success",
+                  "clientId" : "[CLIENT ID]",
+                  "clientSecret" : "[CLIENT SECRET]"
+                }
+        400:
+        404:
+        500:
+          body:
+            application/json:
+              type: errorResponse
+              example:
+                {
+"success": false,
+"apiName": "pubsub-messaging",
+"version": "pubsub-messaging",
+"correlationId": "a7195fa0-ad7c-11eb-a443-8c85904803da",
+"timestamp": "2021-05-05T16:34:10.044+08:00",
+"errorDetails": [
+  {
+"code": 404,
+"message": "Not Found",
+"additionalInfo": "Not Found : HTTP PUT on resource 'https://anypoint.mulesoft.com:443/mq/admin/api/v1/organizations/fa076ba4-630c-4796-aea6-6eed9f573f64/environments/57e3afbf-8d84-4261-8d2c-97492dd47ec4/regions/ap-southeast-1/bindings/exchanges/resourceExchange1/queues/consumerQ6' failed: not found (404)."
+}
+],
+}
+    /unsuscribe:
+      securedBy:
+      - basic-authentication-required
+      delete:
+         body:
+           application/json:
+             type: unsubscribeRequest
+             example:
+              {
+                "queueId" : "consumerQ6",
+                "exchangeId" : "resourceExchange",
+                "clientName" : "subscriberClient6"
+              }
+         responses:         
+          400:
+          404:
+          500:
+            body:
+              application/json:
+                type: errorResponse
+                example:
+                  {
+"success": false,
+"apiName": "pubsub-messaging",
+"version": "pubsub-messaging",
+"correlationId": "a7195fa0-ad7c-11eb-a443-8c85904803da",
+"timestamp": "2021-05-05T16:34:10.044+08:00",
+"errorDetails": [
+  {
+"code": 404,
+"message": "Not Found",
+"additionalInfo": "Not Found : HTTP PUT on resource 'https://anypoint.mulesoft.com:443/mq/admin/api/v1/organizations/fa076ba4-630c-4796-aea6-6eed9f573f64/environments/57e3afbf-8d84-4261-8d2c-97492dd47ec4/regions/ap-southeast-1/bindings/exchanges/resourceExchange1/queues/consumerQ6' failed: not found (404)."
+}
+],
+}
+          200:
+              
+    /credentials:
+      /reset:
+        securedBy:
+        - basic-authentication-required
+        put:
+          body:
+           application/json:
+             type: credentialResetRequest
+             example:
+              {
+                "clientName" : "subscriberClient6"
+              }
+          responses:
+            200:
+              body:
+                application/json:
+                  type: subscriptionResponse
+                  example:
+                    {
+                      "status" : "success",
+                      "clientId" : "[CLIENT ID]",
+                      "clientSecret" : "[CLIENT SECRET]"
+                    }
+            400:
+            404:
+            500:
+              body:
+                application/json:
+                  type: errorResponse
+                  example:
+                    {
+"success": false,
+"apiName": "pubsub-messaging",
+"version": "pubsub-messaging",
+"correlationId": "e4dab320-ad7c-11eb-a443-8c85904803da",
+"timestamp": "2021-05-05T16:35:49.601+08:00",
+"errorDetails": [
+  {
+"code": 500,
+"message": "Internal Server Error",
+"additionalInfo": "Internal Server Error : Client App does not exists"
+}
+],
+}
+ 
+/healthcheck:
+  securedBy:
+    - basic-authentication-required
+  get:
+    description: "Get health of the application"
+    queryParameters:
+      mode:
+        required: false
+        type: string
+        enum:
+           - verbose
+           - default 
+        default: "default"
+    responses:
+      200:
+        body:
+          application/json:
+            type: healthCheckResponse

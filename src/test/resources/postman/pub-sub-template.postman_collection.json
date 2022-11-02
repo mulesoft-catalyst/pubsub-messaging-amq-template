@@ -1,0 +1,282 @@
+{
+	"info": {
+		"_postman_id": "3b914225-371e-4df7-8bc3-979f62d48c9c",
+		"name": "pub-sub-template",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "POST: https://localhost:8082/api/publish",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\" : \"Test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8082/api/publish",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"publish"
+					]
+				},
+				"description": "API Endpoint to publish to default exchange configured in the properties file ${amq.publishExchange}"
+			},
+			"response": []
+		},
+		{
+			"name": "POST:https://localhost:8082/api/publish/exchange/{exchangeName}",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"message\" : \"Test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8082/api/publish/exchange/resourceExchange",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"publish",
+						"exchange",
+						"resourceExchange"
+					]
+				},
+				"description": "API Endpoint to publish to an exchange of choice {exchangeName}"
+			},
+			"response": []
+		},
+		{
+			"name": "POST: https://localhost:8082/api/admin/subscriber",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "[PASSWORD]",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "[USERNAME]",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "",
+						"value": "",
+						"type": "text",
+						"disabled": true
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"queueId\": \"consumerQ6\",\n  \"exchangeId\": \"resourceExchange\",\n  \"clientName\": \"subscriberClient6\",\n  \"defaultTtl\": 691200000,\n  \"defaultLockTtl\": 3000,\n  \"type\": \"queue\",\n  \"encrypted\": true,\n  \"deadLetterQueueId\": \"consumerQ1\",\n  \"maxDeliveries\": \"5\",\n  \"defaultDeliveryDelay\": 2000\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8082/api/admin/subscriber",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"admin",
+						"subscriber"
+					]
+				},
+				"description": "API Endpoint to create a subscriber (queue , corresponding DLQ and client) and bind to an exchange"
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE:https://localhost:8082/api/admin/subscriber/unsuscribe",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "[PASSWORD]",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "[USERNAME]",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"queueId\": \"consumerQ6\",\n  \"exchangeId\": \"resourceExchange\",\n  \"clientName\": \"subscriberClient6\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8082/api/admin/subscriber/unsuscribe",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"admin",
+						"subscriber",
+						"unsuscribe"
+					]
+				},
+				"description": "Delete a subscriber queue and the client application"
+			},
+			"response": []
+		},
+		{
+			"name": "PUT:https://localhost:8082/api/admin/subscriber/credentials/reset",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "[PASSWORD]",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "[USERNAME]",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"clientName\": \"subscriberClient6\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "https://localhost:8082/api/admin/subscriber/credentials/reset",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"admin",
+						"subscriber",
+						"credentials",
+						"reset"
+					]
+				},
+				"description": "API endpoint to reset the client credentials for a client app"
+			},
+			"response": []
+		},
+		{
+			"name": "GET:https://localhost:8082/api/healthcheck",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:8082/api/healthcheck",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"healthcheck"
+					]
+				},
+				"description": "Default Health Check"
+			},
+			"response": []
+		},
+		{
+			"name": "GET:https://localhost:8082/api/healthcheck?mode=verbose",
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "[PASSWORD]",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "[USERNAME]",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://localhost:8082/api/healthcheck?mode=verbose",
+					"protocol": "https",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"healthcheck"
+					],
+					"query": [
+						{
+							"key": "mode",
+							"value": "verbose"
+						}
+					]
+				},
+				"description": "Health Check - Verbose"
+			},
+			"response": []
+		}
+	]
+}
